@@ -43,19 +43,23 @@ public class ModelBuilder {
     private Map<Class<?>, MutableGraphQLInputObjectType> inputObjectRegistry;
     private Map<Class<?>, GraphQLObjectType> queryObjectRegistry;
 
-    public ModelBuilder(EntityDictionary dictionary, DataFetcher dataFetcher) {
+    public static final String OPERATION_ARGUMENT = "op";
+    public static final String DATA_ARGUMENT = "data";
+    public static final String ID_ARGUMENT = "id";
+
+    ModelBuilder(EntityDictionary dictionary, DataFetcher dataFetcher) {
         this.dictionary = dictionary;
         this.dataFetcher = dataFetcher;
         this.buildContext = DefaultBuildContext.newReflectionContext();
 
         relationshipOpArg = GraphQLArgument.newArgument()
-                .name("op")
+                .name(OPERATION_ARGUMENT)
                 .type(buildContext.getInputType(RelationshipOp.class))
                 .defaultValue(RelationshipOp.FETCH)
                 .build();
 
         idArgument = GraphQLArgument.newArgument()
-                .name("id")
+                .name(ID_ARGUMENT)
                 .type(Scalars.GraphQLString)
                 .build();
 
@@ -242,12 +246,12 @@ public class ModelBuilder {
 
         if (asList) {
              return GraphQLArgument.newArgument()
-                    .name("data")
+                    .name(DATA_ARGUMENT)
                     .type(new GraphQLList(argumentType))
                     .build();
         } else {
             return GraphQLArgument.newArgument()
-                    .name("data")
+                    .name(DATA_ARGUMENT)
                     .type(argumentType)
                     .build();
         }
