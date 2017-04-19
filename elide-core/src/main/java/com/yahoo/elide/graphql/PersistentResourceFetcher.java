@@ -14,7 +14,6 @@ import com.yahoo.elide.core.exceptions.InvalidAttributeException;
 import com.yahoo.elide.core.exceptions.UnknownEntityException;
 import graphql.language.Argument;
 import graphql.language.Field;
-import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
 import graphql.language.StringValue;
 import graphql.schema.DataFetcher;
@@ -26,6 +25,7 @@ import graphql.schema.GraphQLType;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ws.rs.WebApplicationException;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.yahoo.elide.graphql.ModelBuilder.DATA_ARGUMENT;
 import static com.yahoo.elide.graphql.ModelBuilder.ID_ARGUMENT;

@@ -11,7 +11,17 @@ import com.yahoo.elide.core.RelationshipType;
 import graphql.Scalars;
 import graphql.java.generator.BuildContext;
 import graphql.java.generator.DefaultBuildContext;
-import graphql.schema.*;
+import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeReference;
 import org.apache.commons.collections.CollectionUtils;
 
 import java.util.HashMap;
