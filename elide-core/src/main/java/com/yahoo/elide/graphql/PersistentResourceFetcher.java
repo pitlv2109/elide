@@ -14,6 +14,9 @@ import com.yahoo.elide.core.exceptions.InvalidAttributeException;
 import com.yahoo.elide.core.exceptions.UnknownEntityException;
 import graphql.language.Argument;
 import graphql.language.Field;
+import graphql.language.ObjectField;
+import graphql.language.ObjectValue;
+import graphql.language.StringValue;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLList;
@@ -33,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.elide.graphql.ModelBuilder.DATA_ARGUMENT;
 import static com.yahoo.elide.graphql.ModelBuilder.ID_ARGUMENT;
@@ -64,7 +68,11 @@ public class PersistentResourceFetcher implements DataFetcher {
 
             Map<String, Object> args = environment.getArguments();
             id = (String) args.get(ID_ARGUMENT);
-            data = ImmutableList.copyOf((List<Map<String, Object>>) args.getOrDefault(DATA_ARGUMENT, EMPTY_DATA));
+            List<Map<String, Object>> dataList = (List<Map<String, Object>>) args.get(DATA_ARGUMENT);
+            if (dataList == null) {
+                dataList = (List) EMPTY_DATA;
+            }
+            data = ImmutableList.copyOf(dataList);
         }
     }
 
@@ -170,7 +178,38 @@ public class PersistentResourceFetcher implements DataFetcher {
         Field field = request.fields.get(0);
         EntityDictionary dictionary = request.requestScope.getDictionary();
 
-        PersistentResource updateObject = load(field.getName(), request.id, request.requestScope);
+        Object source = request.source;
+        String id = request.id;
+        RequestScope requestScope = request.requestScope;
+
+        Collection<PersistentResource> objectsToUpdate;
+        if (source instanceof PersistentResource) {
+            PersistentResource resource = (PersistentResource) source;
+            // NOTE: Currently only handles _single_ object update
+            String dataId = (id != null) ? id : field.getArguments().stream()
+                    .filter(arg -> DATA_ARGUMENT.equalsIgnoreCase(arg.getName()))
+                    .findFirst()
+                    .map(data -> {
+                        // TODO: Handle lists?
+                        if (data.getValue() instanceof ObjectValue) {
+                            ObjectValue object = (ObjectValue) data.getValue();
+                            return object.getObjectFields().stream()
+                                    .filter(f -> "id".equalsIgnoreCase(f.getName()))
+                                    .findFirst()
+                                    .map(f -> ((StringValue) f.getValue()).getValue())
+                                    .orElse(null);
+                        }
+                        return "";
+                    })
+                    .orElse(null);
+            objectsToUpdate = (dataId == null)
+                             ? resource.getRelationCheckedFiltered(field.getName())
+                             : Collections.singleton(resource.getRelation(field.getName(), dataId));
+        } else {
+            objectsToUpdate = (id != null)
+                             ? Collections.singleton(load(field.getName(), id, requestScope))
+                             : loadCollectionOf(field.getName(), requestScope);
+        }
 
         if (request.outputType instanceof GraphQLList) {
             GraphQLObjectType objectType = (GraphQLObjectType) ((GraphQLList) request.outputType).getWrappedType();
@@ -183,7 +222,7 @@ public class PersistentResourceFetcher implements DataFetcher {
                             Object value = entry.getValue();
                             if (dictionary.isAttribute(entityClass, fieldName)) {
                                 // Update attribute value
-                                updateObject.updateAttribute(fieldName, value);
+                                objectsToUpdate.stream().forEach(o -> o.updateAttribute(fieldName, value));
                             } else if (dictionary.isRelation(entityClass, fieldName)) {
                                 // Replace relationship
                                 String relName = dictionary.getJsonAliasFor(
@@ -193,20 +232,24 @@ public class PersistentResourceFetcher implements DataFetcher {
                                     // TODO: For a to-many relationship this would be a list... Need to handle that case
                                     newRelationships.add(load(relName, value.toString(), request.requestScope));
                                 }
-                                updateObject.updateRelation(fieldName, newRelationships);
+                                objectsToUpdate.stream().forEach(o -> o.updateRelation(fieldName, newRelationships));
                             } else if (fieldName.equals(dictionary.getIdFieldName(entityClass))) {
+                                if (id == null) {
+                                    // TODO: In case of list, should ensure we're modifying the correct object instance
+                                    return; // Not updating id
+                                }
                                 // Set id value
                                 if (value == null) {
                                     throw new WebApplicationException("Cannot set object identifier to null",
                                             HttpStatus.SC_BAD_REQUEST);
                                 }
-                                updateObject.setId(value.toString());
+                                objectsToUpdate.stream().forEach(o -> o.setId(value.toString()));
                             } else {
                                 throw new WebApplicationException("Attempt to update unknown field: '"
                                         + fieldName + "'", HttpStatus.SC_BAD_REQUEST);
                             }
                         });
-                container.add(updateObject);
+                container.addAll(objectsToUpdate);
             }
             return container;
         }
