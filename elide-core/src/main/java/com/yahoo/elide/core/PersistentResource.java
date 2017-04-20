@@ -50,6 +50,7 @@ import javax.persistence.GeneratedValue;
 import javax.ws.rs.ServerErrorException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
@@ -155,6 +156,7 @@ public class PersistentResource<T> implements com.yahoo.elide.security.Persisten
      * @deprecated Will be removed in Elide 4. Instead use
      *  {@link PersistentResource#createObject(PersistentResource, Class, RequestScope, String)}
      */
+    @Deprecated
     public static <T> PersistentResource<T> createObject(Class<T> entityClass, RequestScope requestScope, String uuid) {
         return createObject(null, entityClass, requestScope, uuid);
     }
@@ -187,6 +189,7 @@ public class PersistentResource<T> implements com.yahoo.elide.security.Persisten
      * @deprecated Will be removed in Elide 4, instead use
      *  {@code PersistentResource(T,PersistentResource,String,RequestScope)}
      */
+    @Deprecated
     public PersistentResource(PersistentResource<?> parent, T obj, RequestScope requestScope) {
         this(obj, parent, requestScope.getUUIDFor(obj), requestScope);
     }
@@ -199,6 +202,7 @@ public class PersistentResource<T> implements com.yahoo.elide.security.Persisten
      * @deprecated Will be removed in Elide 4, instead use
      *  {@code PersistentResource(T,PersistentResource,String,RequestScope)}
      */
+    @Deprecated
     public PersistentResource(T obj, RequestScope requestScope) {
         this(obj, null, requestScope.getUUIDFor(obj), requestScope);
     }
@@ -212,6 +216,7 @@ public class PersistentResource<T> implements com.yahoo.elide.security.Persisten
      * @deprecated Will be removed in Elide 4, instead use
      *  {@code PersistentResource(T,PersistentResource,String,RequestScope)}
      */
+    @Deprecated
     protected PersistentResource(T obj, PersistentResource<?> parent, RequestScope requestScope) {
         this(obj, parent, requestScope.getUUIDFor(obj), requestScope);
     }
@@ -222,6 +227,7 @@ public class PersistentResource<T> implements com.yahoo.elide.security.Persisten
      * @param checkId the check id
      * @return True if matches false otherwise
      */
+    @Override
     public boolean matchesId(String checkId) {
         if (checkId == null) {
             return false;
@@ -532,7 +538,7 @@ public class PersistentResource<T> implements com.yahoo.elide.security.Persisten
             }
         }
 
-        if (newValue != null) {
+        if (newResource != null) {
             if (hasInverseRelation(fieldName)) {
                 addInverseRelation(fieldName, newValue);
                 newResource.markDirty();
@@ -752,6 +758,7 @@ public class PersistentResource<T> implements com.yahoo.elide.security.Persisten
      *
      * @return ID id
      */
+    @Override
     public String getId() {
         return dictionary.getId(getObject());
     }
@@ -787,6 +794,7 @@ public class PersistentResource<T> implements com.yahoo.elide.security.Persisten
      * Gets UUID.
      * @return the UUID
      */
+    @Override
     public Optional<String> getUUID() {
         return uuid;
     }
@@ -1039,6 +1047,7 @@ public class PersistentResource<T> implements com.yahoo.elide.security.Persisten
      *
      * @return bean object
      */
+    @Override
     public T getObject() {
         return obj;
     }
@@ -1056,6 +1065,7 @@ public class PersistentResource<T> implements com.yahoo.elide.security.Persisten
      *
      * @return type resource class
      */
+    @Override
     @JsonIgnore
     public Class<T> getResourceClass() {
         return (Class) dictionary.lookupEntityClass(obj.getClass());
@@ -1065,6 +1075,7 @@ public class PersistentResource<T> implements com.yahoo.elide.security.Persisten
      * Gets type.
      * @return the type
      */
+    @Override
     public String getType() {
         return type;
     }
@@ -1126,6 +1137,7 @@ public class PersistentResource<T> implements com.yahoo.elide.security.Persisten
      * Gets request scope.
      * @return the request scope
      */
+    @Override
     public RequestScope getRequestScope() {
         return requestScope;
     }
@@ -1645,6 +1657,7 @@ public class PersistentResource<T> implements com.yahoo.elide.security.Persisten
      * @return Filtered set of resources
      * @deprecated use {@link PersistentResource#filter(Class, Set, boolean)}
      */
+    @Deprecated
     protected static Set<PersistentResource> filter(Class<? extends Annotation> permission,
                                                     Set<PersistentResource> resources) {
         return filter(permission, resources, false);
